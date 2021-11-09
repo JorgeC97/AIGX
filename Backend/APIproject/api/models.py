@@ -18,3 +18,12 @@ class Reporte(models.Model):
     def __str__(self):
         return self.title
 
+# class User(models.Model):
+#     uid = models.PositiveIntegerField()
+#     partnerId = models.PositiveIntegerField()
+
+#     def __init__(self, uid):
+#         self.uid = uid
+    
+#     def setPartnerId(self, partnerId):
+#         self.partnerId = partnerId

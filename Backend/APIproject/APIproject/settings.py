@@ -25,7 +25,9 @@ SECRET_KEY = 'django-insecure-c^c)4uu1&y1c_v^!c8euf^dq*#qa-@0=xngmr87=^c9pw(0usn
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    '192.168.0.2'
+]
 
 
 # Application definition
@@ -39,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'api',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
@@ -49,8 +52,12 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
+CORS_ALLOW_ALL_ORIGINS = True
+SESSION_COOKIE_HTTPONLY = False
+SESSION_ENGINE='django.contrib.sessions.backends.cached_db'
 ROOT_URLCONF = 'APIproject.urls'
 
 TEMPLATES = [

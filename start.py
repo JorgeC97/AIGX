@@ -5,20 +5,12 @@ import xmlrpc.client
 
 username = "jcabrales@aigx.mx"
 
-url = "https://axhs.odoo.com" #main
+url = "http://axhs.odoo.com" #main
 db = "axonebackoffice-aigx-main-1924299" #main
-password = "cf6550d7f13beca8556c3ed77f91ffbe53a0005a" #main
-
-# url = "https://axonebackoffice-client-app-test-1924357.dev.odoo.com" #test
-# db = "axonebackoffice-client-app-test-1924357" #test
-# password = "63154da9232fcc0ee54cf7bc466b3c09682c0630" #test
+password = "07b55b55a7436eb683973fb64e0ff93d0e24c0f1" #main
 
 c_username = "hjuan@aigx.mx" #"ejemplo@aigx.mx"   <-- usuario de la app
 c_password = "Axone$odoo$"                            #<-- contraseña del usuario de la app
-
-#info = xmlrpc.client.ServerProxy('https://demo.odoo.com/start').start()
-#url, db, username, password = \
-#    info['host'], info['database'], info['user'], info['password']
 
 common = xmlrpc.client.ServerProxy('{}/xmlrpc/2/common'.format(url))
 
@@ -28,11 +20,7 @@ c_uid = common.authenticate(db, c_username, c_password, {})
 print(c_uid)
 models = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
 
-#print (
-#    models.execute_kw(db, uid, password,
-#    'res.partner', 'check_access_rights',
-#    ['read'], {'raise_exception': False})
-#)
+
 
 print (
     models.execute_kw(db, c_uid, c_password,       #despliega si tiene permisos de acceso el usuario
@@ -60,17 +48,24 @@ empresa = "Aceros Trefilados de Precisión, S. de R.L. de C.V. (NUCOR), Christia
 partner_id = 2679
 sujeto = "Christian Merino"
 
+projects = models.execute_kw(db, uid, password,
+        'project.project', 'search_read',
+        [[['partner_id','=', partner_id]]],
+        {'fields': ['id','name']})
+
+print(projects)
+
 print(uid)
 
 hola=models.execute_kw(db, uid, password,
         'res.users', 'search_read',  
         [[['id', '=', uid]]])
 
-# partner_id=models.execute_kw(db,uid, password,
-#         'res.partner', 'search_read',
-#         [[['id','=','2552']]],
-#         {'fields': ['parent_id']})[0].get('parent_id')[0]
-# print(partner_id)
+partner_id=models.execute_kw(db,uid, password,
+         'res.partner', 'search_read',
+         [[['id','=','2552']]],
+         {'fields': ['parent_id']})[0].get('parent_id')[0]
+print(partner_id)
 
 class user:
     def __init__(self, datos):
@@ -160,3 +155,19 @@ campos=['name', 'id', 'comment', 'message_partner_ids']
 #    {'fields': [ 'x_name', 'x_studio__parte'], 'limit': 5})
 #s
 #print (hol)
+
+
+
+# url = "https://axonebackoffice-client-app-test-1924357.dev.odoo.com" #test
+# db = "axonebackoffice-client-app-test-1924357" #test
+# password = "63154da9232fcc0ee54cf7bc466b3c09682c0630" #test
+
+#info = xmlrpc.client.ServerProxy('https://demo.odoo.com/start').start()
+#url, db, username, password = \
+#    info['host'], info['database'], info['user'], info['password']
+
+#print (
+#    models.execute_kw(db, uid, password,
+#    'res.partner', 'check_access_rights',
+#    ['read'], {'raise_exception': False})
+#)

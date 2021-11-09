@@ -1,6 +1,8 @@
 import React, { useState } from "react";
-import { Image, StyleSheet, View, Dimensions, Animated, ScrollView } from "react-native";
-import { Input, Header, Button, Icon } from "../components";
+import { Image, StyleSheet, View, Dimensions, Animated, ScrollView, Alert } from "react-native";
+import { Input, Header, Button, Icon,  } from "../components";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {Picker} from '@react-native-picker/picker';
 
 const { height } = Dimensions.get("screen");
 
@@ -8,6 +10,8 @@ export default function Login({navigation}) {
 
   const [alignment, setAlignment] = useState(new Animated.Value(0));
   const [name, setName] = useState('usuario')
+  const [username, setUsername] = useState('username')
+  const [password, setPassword] = useState('password')
 
   const toDocumentsPage = () => {
     Animated.timing(alignment, {
@@ -24,6 +28,75 @@ export default function Login({navigation}) {
       useNativeDriver: false,
     }).start();
   };
+
+  const get_set_cookies = async function(value) {
+    
+    await AsyncStorage.setItem('cookie', value)
+    console.log(value)
+}
+
+  const login = () => {
+    let formdata = new FormData();
+    formdata.append('username',username)
+    formdata.append('password',password)
+
+    fetch('http://192.168.0.2:80/api/login', {
+      method: 'POST',
+      credentials: 'same-origin',
+      body: formdata})
+      .then((resp)=>{
+        return resp.json()
+      })
+      .then((data)=>{ 
+        if (data.name !== "Wrong Username or Password"){
+          console.log("Logged in!!");
+          setName(data.name)
+          get_set_cookies(data.session)
+          getContratos()
+          toDocumentsPage()
+        } else {
+          // Alert.alert("error", text)
+          alert(data.name)
+        }
+        console.log(data)
+      })
+      .catch((error) => {
+        console.error(error);
+      });
+  };
+
+  const [contratos, setContratos] = useState([])
+
+  const [contrato, setContrato] = useState()
+
+  const handleValueChange=(itemValue, itemIndex) =>setContrato(itemValue)
+
+  const getContratos = async () => {
+    const cookie = await AsyncStorage.getItem('cookie') 
+    fetch('http://192.168.0.2:80/api/proyectos?sid='+cookie, {
+      method:"GET"
+    })
+
+    .then(resp => resp.json())
+    .then(datos => {
+      let arrayContratos = []
+      if(typeof(datos) != 'array'){
+        arrayContratos.push(datos)
+      } else {
+        arrayContratos = datos
+      }
+      setContratos(arrayContratos)
+      console.log(arrayContratos)
+    })
+    .then(()=> {
+      toDocumentsPage()
+    })
+    .catch((error) => {
+      console.error(error);
+    });
+
+  }
+
 
   const heightIntropolate = alignment.interpolate({
     inputRange: [0, 1],
@@ -67,11 +140,11 @@ export default function Login({navigation}) {
           <Header title="Bienvenido" subTitle="Introduzca los Siguientes Datos" />
         </View>
         <View>
-          <Input onChangeText={(val) => setName(val)} icon="md-person" placeholder="Usuario" />
-          <Input icon="md-mail" placeholder="Correo Electronico" />
-          <Input icon="ios-lock" placeholder="Contraseña" />
+          {/* <Input onChangeText={(val) => setName(val)} icon="md-person" placeholder="Usuarioss" /> */}
+          <Input icon="md-mail" placeholder="Correo Electronico" value={username} onChangeText={setUsername} />
+          <Input icon="ios-lock" placeholder="Contraseña" value={password} onChangeText={setPassword} />
         </View>
-        <Button onPress={() => toDocumentsPage()} title="Iniciar Sesión" />
+        <Button onPress={() => login()} title="Iniciar Sesión" />
       </Animated.View>
       </ScrollView>
       <ScrollView>
@@ -88,7 +161,20 @@ export default function Login({navigation}) {
           />
         </View>
         <View>
-
+          <ul>
+          {contratos.map((item) => (
+            <li key={item.id}>{item.name}</li>
+          ))}
+        </ul>
+        {/* <Picker
+          selectedValue={contrato}
+          style={{ height: 50, width: 150 }}
+          onValueChange={handleValueChange}
+        >
+          {
+            contratos.map(contrato=> <Picker.Item key={contrato.id} label={contrato.name} value={contrato.id}/>)
+          }
+        </Picker> */}
         </View>
         <Button title="Elegir contrato" onPress={() => navigation.navigate('Inicio')} />
       </Animated.View>
