@@ -21,7 +21,7 @@ export default function Pedidos() {
   const [pedido, setPedido] = useState([])
 
   useEffect(() => {
-    fetch('http://192.168.1.143:80/api/news/', {
+    fetch('http://192.168.0.2:80/api/news/', {
       method:"GET"
     })
 
