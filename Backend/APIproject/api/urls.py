@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import reporte_list, reporte_details, login, readUser, readReporteActividad, readProjects, readTasks
+from .views import reporte_list, reporte_details, login, readUser, readReporteActividad, readProjects, readTasks, getReportesS
 
 urlpatterns = [
     path('api/reportes/', reporte_list),
@@ -8,5 +8,6 @@ urlpatterns = [
     path('api/whoami', readUser),
     path('api/proyectos', readProjects),
     path('api/proyecto/<int:projectId>', readTasks),
-    path('api/reporteActividad/<int:activityId>', readReporteActividad)
+    path('api/reporteActividad/<int:activityId>', readReporteActividad),
+    path('api/reportesS', getReportesS),
 ]

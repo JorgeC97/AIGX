@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Image, StyleSheet, View, Dimensions, Animated, ScrollView, Alert } from "react-native";
 import { Input, Header, Button, Icon,  } from "../components";
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {Picker} from '@react-native-picker/picker';
+import SelectDropdown from 'react-native-select-dropdown'
 
 const { height } = Dimensions.get("screen");
 
@@ -40,7 +40,7 @@ export default function Login({navigation}) {
     formdata.append('username',username)
     formdata.append('password',password)
 
-    fetch('http://192.168.0.2:80/api/login', {
+    fetch('http://192.168.100.19:80/api/login', {
       method: 'POST',
       credentials: 'same-origin',
       body: formdata})
@@ -73,17 +73,16 @@ export default function Login({navigation}) {
 
   const getContratos = async () => {
     const cookie = await AsyncStorage.getItem('cookie') 
-    fetch('http://192.168.0.2:80/api/proyectos?sid='+cookie, {
+    fetch('http://192.168.100.19:80/api/proyectos?sid='+cookie, {
       method:"GET"
     })
-
     .then(resp => resp.json())
     .then(datos => {
       let arrayContratos = []
-      if(typeof(datos) != 'array'){
-        arrayContratos.push(datos)
+      if(typeof(datos.items) != 'array'){
+        arrayContratos.push(datos.items)
       } else {
-        arrayContratos = datos
+        arrayContratos = datos.items
       }
       setContratos(arrayContratos)
       console.log(arrayContratos)
@@ -161,12 +160,29 @@ export default function Login({navigation}) {
           />
         </View>
         <View>
+        <SelectDropdown
+          data={contratos}
+          onSelect={(selectedItem, index) => {
+            console.log(selectedItem, index)
+            console.log('selected Item name ->>>>',selectedItem.name)
+            console.log('selected Item Id ->>>>',selectedItem.id)
+          }}
+          buttonTextAfterSelection={(selectedItem, index) => {
+            return selectedItem.name
+          }}
+          rowTextForSelection={(item, index) => {
+            return item.name
+          }}
+            />
+        {/*
           <ul>
           {contratos.map((item) => (
             <li key={item.id}>{item.name}</li>
           ))}
-        </ul>
-        {/* <Picker
+          </ul>
+        */}
+        {/* 
+        <Picker
           selectedValue={contrato}
           style={{ height: 50, width: 150 }}
           onValueChange={handleValueChange}
@@ -174,7 +190,8 @@ export default function Login({navigation}) {
           {
             contratos.map(contrato=> <Picker.Item key={contrato.id} label={contrato.name} value={contrato.id}/>)
           }
-        </Picker> */}
+        </Picker> 
+        */}
         </View>
         <Button title="Elegir contrato" onPress={() => navigation.navigate('Inicio')} />
       </Animated.View>

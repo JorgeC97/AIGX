@@ -8,6 +8,8 @@ import xmlrpc.client
 from django import forms
 from .forms import LoginForm
 from django.contrib.sessions.backends.db import SessionStore
+from datetime import datetime
+from numpy import append
 
 master_uid = '13'
 master_password = '07b55b55a7436eb683973fb64e0ff93d0e24c0f1'
@@ -123,6 +125,7 @@ def login(request):
         partnerId = models.execute_kw(db, master_uid, master_password,'res.partner', 'search_read',[[['user_ids','=',uid]]])[0].get('id')
         request.session['uid'] = uid
         request.session['partnerId'] = partnerId
+        request.session['password'] = password
 
         # request.session['empresa'] = getEmpresa(uid, password)
         print(partnerId)
@@ -154,18 +157,28 @@ def readUser(request):
 
 @csrf_exempt
 def readProjects(request):
+    #uid="53"
+    #password="123456"
+    
     sid = request.GET.get('sid','')
-    if(sid is not ''):
+    if(sid != ''):
         session = SessionStore(session_key=request.GET.get('sid',''))
     else:
         session = request.session
     partnerId = session.get('partnerId', False)
+    uid = session.get('uid',False)
+    password = session.get('password',False)
     if(partnerId is not False):
-        projects = models.execute_kw(db, master_uid, master_password,
+        #projects = models.execute_kw(db, master_uid, master_password,
+        projects = models.execute_kw(db, uid, password,
         'project.project', 'search_read',
-        [[['partner_id','=',partnerId]]],
+        #[[['partner_id','=',partnerId]]],
+        [[['message_is_follower','=',True]]],
         {'fields': ['id','name']})
-        return JsonResponse(projects[0])
+        print(projects)
+        projectsFound = { }
+        projectsFound['items'] = projects
+        return JsonResponse(projectsFound)
     return HttpResponse("Not logged In")
 
 @csrf_exempt
@@ -210,4 +223,83 @@ def getEmpresa(uid, password):
         [[['id', 'equals', uid]]],
         {'fields': ['name']})
     return hola
+
+
+@csrf_exempt
+def getReportesS(request):
+    sid = request.GET.get('sid','')
+    if(sid != ''):
+        session = SessionStore(session_key=request.GET.get('sid',''))
+    else:
+        return HttpResponse("Not logged In")
+    project = request.GET.get('contrato','')
+    reportes = models.execute_kw(db, master_uid, master_password,
+        'x_reporte_de_actividad', 'search_read',
+        [[['x_studio_contrato', '=', project ],['x_studio_fecha', '!=', False ]]],
+        {'fields': 
+        [
+            'x_name',
+            'x_studio_fecha',
+            'x_studio_cliente', 
+            'x_studio_contrato', 
+            'x_studio__parte', 
+            'x_studio_cantidad_inspeccionada', 
+            'x_studio_cantidad_rechazada',
+            'x_studio_cantidad_retrabajada',
+            'x_studio_cantidad_aceptada'
+            ]})
+
+    for n in reportes:
+        dia=n.get('x_studio_fecha')
+        if dia:
+            n['semana']= datetime.strptime(dia, '%Y-%m-%d').isocalendar()[1]
+            n['year']= datetime.strptime(dia, '%Y-%m-%d').year
+        else:
+            print(n.get('id'))
+
+    for x in reportes:
+        if not x['x_studio_fecha']:
+                reportes.remove(x)
+
+    nreportes = sorted(reportes, key=lambda d: d['x_studio_fecha']) 
+
+    reportesO=[]
+
+    x=len(nreportes)
+    numS=0
+    cont=0
+
+    while cont<x:
+        if cont==0:
+            reportesO.append({'semana':nreportes[cont].get('semana')})
+            reportesO[numS]['year']=nreportes[cont]['year']
+            reportesO[numS]['x_studio__parte']=nreportes[cont]['x_studio__parte']
+            reportesO[numS]['x_studio_cantidad_inspeccionada']=nreportes[cont]['x_studio_cantidad_inspeccionada']
+            reportesO[numS]['x_studio_cantidad_rechazada']=nreportes[cont]['x_studio_cantidad_rechazada']
+            reportesO[numS]['x_studio_cantidad_retrabajada']=nreportes[cont]['x_studio_cantidad_retrabajada']
+            reportesO[numS]['x_studio_cantidad_aceptada']=nreportes[cont]['x_studio_cantidad_aceptada']
+            cont+=1
+        elif nreportes[cont].get('semana') != nreportes[cont-1].get('semana'):
+            numS+=1
+            reportesO.append({'semana':nreportes[cont].get('semana')})
+            reportesO[numS]['year']=nreportes[cont]['year']
+            reportesO[numS]['x_studio__parte']=nreportes[cont]['x_studio__parte']
+            reportesO[numS]['x_studio_cantidad_inspeccionada']=nreportes[cont]['x_studio_cantidad_inspeccionada']
+            reportesO[numS]['x_studio_cantidad_rechazada']=nreportes[cont]['x_studio_cantidad_rechazada']
+            reportesO[numS]['x_studio_cantidad_retrabajada']=nreportes[cont]['x_studio_cantidad_retrabajada']
+            reportesO[numS]['x_studio_cantidad_aceptada']=nreportes[cont]['x_studio_cantidad_aceptada']
+            cont+=1
+        else:
+            reportesO[numS]['x_studio__parte'] += ((','+nreportes[cont]['x_studio__parte']) if nreportes[cont]['x_studio__parte'] else '')
+            reportesO[numS]['x_studio_cantidad_inspeccionada']+= (nreportes[cont]['x_studio_cantidad_inspeccionada'] if nreportes[cont]['x_studio__parte'] else 0)
+            reportesO[numS]['x_studio_cantidad_rechazada']+= (nreportes[cont]['x_studio_cantidad_rechazada'] if nreportes[cont]['x_studio__parte'] else 0)
+            reportesO[numS]['x_studio_cantidad_retrabajada']+= (nreportes[cont]['x_studio_cantidad_retrabajada'] if nreportes[cont]['x_studio__parte'] else 0)
+            reportesO[numS]['x_studio_cantidad_aceptada']+= (nreportes[cont]['x_studio_cantidad_aceptada'] if nreportes[cont]['x_studio__parte'] else 0)
+            cont+=1
+
+    reportesS=list(reversed(reportesO))        
+
+    temp = {}
+    temp['items']=reportesS
+    return  JsonResponse(temp)
 

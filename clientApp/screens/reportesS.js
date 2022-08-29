@@ -22,7 +22,7 @@ export default function Reportes() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('http://192.168.0.2:80/api/reportes/', {
+    fetch('http://192.168.100.19:80/api/reportes/', {
       method:"GET"
     })
 
